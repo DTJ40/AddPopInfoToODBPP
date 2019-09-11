@@ -322,8 +322,10 @@ End;
 Procedure AddBomToODB;
 Begin
     GetBomData;
+    // Check for Top-Layer components
     If (FileExists(ODBTopCompFilePath) = True) Then
        ProcessODBTop;
+    // Check for Bottom Layer components
     If (FileExists(ODBBotCompFilePath) = True) Then
        ProcessODBBottom;
 End;
