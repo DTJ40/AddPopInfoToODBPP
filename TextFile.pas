@@ -338,13 +338,22 @@ End;
 Procedure Generate(Parameters : string);
 Var
    FileInfo      : string;
+   EBADirPath    : string;
 Begin
 
      ProcessParameters(Parameters);
 
      BOMFilePath := StartParameters[1] + 'BOM\' + StartParameters[2] + '.txt';
-     ODBTopCompFilePath := StartParameters[1] + 'ODB\odb\steps\pcb1\layers\comp_+_top\components';
-     ODBBotCompFilePath := StartParameters[1] + 'ODB\odb\steps\pcb1\layers\comp_+_bot\components';
+     EBADirPath := StartParameters[1] + 'ODB\odb\steps\pcb1';  // Check for Embedded Board Array
+     if (DirectoryExists(EBADirPath) = True) Then
+          Begin                          // Has Embedded Board Array
+               ODBTopCompFilePath := StartParameters[1] + 'ODB\odb\steps\pcb1\layers\comp_+_top\components';
+               ODBBotCompFilePath := StartParameters[1] + 'ODB\odb\steps\pcb1\layers\comp_+_bot\components';
+          End
+     Else Begin                     // Is single PCB
+               ODBTopCompFilePath := StartParameters[1] + 'ODB\odb\steps\pcb\layers\comp_+_top\components';
+               ODBBotCompFilePath := StartParameters[1] + 'ODB\odb\steps\pcb\layers\comp_+_bot\components';
+          End;
 
      AddBomToODB;
 
