@@ -1,11 +1,10 @@
+uses ShellApi;
+
 Const
      ArraySize = 1024;
-     BOMFilePath = 'T:\TestData\BOM\740.001.002.txt'
-     ODBTopCompFilePath = 'T:\TestData\ODB\odb\steps\pcb\layers\comp_+_top\components'
-     ODBBotCompFilePath = 'T:\TestData\ODB\odb\steps\pcb\layers\comp_+_bot\components'
+     ParamStringSeperator = '|'
 
 Var
-   //Text             : string;
    TextLine         : string;
    FileNameInput    : string;
    FileNameOutput   : string;
@@ -14,7 +13,6 @@ Var
    PartDesignator   : string;
    TestText         : string;
    NewString        : string;
-   //BomString      : string;    // max. 256Bytes/255 chars
    BomString        : AnsiString;     // max. 2GB
    TextSegment      : array [0..11] of string;  // create Array for component definition
    FileInput        : Variant;
@@ -23,6 +21,46 @@ Var
    SemicolonPosition: integer;
    CommaPosition    : integer;
    SegmentLength    : integer;
+   ErrorCode        : integer;
+   StartParameters  : Array[0..5] of string;
+
+   BOMFilePath        : string;
+   ODBTopCompFilePath : string;
+   ODBBotCompFilePath : string;
+
+Procedure ProcessParameters(Paramstring : string);
+Var
+   Position           : integer;
+   TempString         : string;
+Begin
+     // Target Path
+     Position := AnsiPos(ParamStringSeperator, ParamString);
+     TempString := AnsiMidStr(ParamString, 14, Position - 21);//14);
+     StartParameters[1] := TempString;
+     ParamString := AnsiRightStr(ParamString, length(ParamString) - Position);
+
+     // Variant Name
+     Position := AnsiPos(ParamStringSeperator, ParamString);
+     TempString := AnsiMidStr(ParamString, 16, Position - 16);
+     StartParameters[2] := TempString;
+     ParamString := AnsiRightStr(ParamString, length(ParamString) - Position);
+
+     Position := AnsiPos(ParamStringSeperator, ParamString);
+     TempString := AnsiMidStr(ParamString, 14, Position - 14);
+     StartParameters[3] := TempString;
+     ParamString := AnsiRightStr(ParamString, length(ParamString) - Position);
+
+     //Open Output Files
+     Position := AnsiPos(ParamStringSeperator, ParamString);
+     TempString := AnsiMidStr(ParamString, 13, Position - 13);
+     StartParameters[4] := TempString;
+     ParamString := AnsiRightStr(ParamString, length(ParamString) - Position);
+
+     // Add Output Files to project
+     Position := AnsiPos('=', ParamString);
+     TempString := AnsiMidStr(ParamString, Position+1, length(ParamString)-Position);
+     StartParameters[5] := TempString;
+End;
 
 Procedure GetBOMData;
 var
@@ -253,12 +291,6 @@ Begin
                               end;
                               NewString := TextSegment[1] + ' ' + TextSegment[2] + ' ' + TextSegment[3] + ' ' + TextSegment[4] + ' ' + TextSegment[5] + ' ' + TextSegment[6] + ' ' + TextSegment[7] + ' ' + TextSegment[8] + ' ;' + TextSegment[9] + '1=' + TextSegment[10] + ',2=' + TextSegment[11];
                               WriteLN(OutputFile, NewString);
-                              //TextLineLength := length(TextLine);
-                              //SemicolonPosition := AnsiPos(';', TextLine);
-                              //PartDesignator
-                              //PartNumber := AnsiMidStr(TextLine, SemicolonPosition-12, 11);
-                              //WriteLN(MyOutputFile, AnsiLeftStr(TextLine, SemicolonPosition));
-                              //WriteLN(MyOutputFile, 'Do something here' + ' ' + TextLine);
                          end
                          else begin
                               // if not write text without modification
@@ -290,16 +322,41 @@ End;
 Procedure AddBomToODB;
 Begin
     GetBomData;
-    ProcessODBTop;
-    ProcessODBBottom;
+    If (FileExists(ODBTopCompFilePath) = True) Then
+       ProcessODBTop;
+    If (FileExists(ODBBotCompFilePath) = True) Then
+       ProcessODBBottom;
+End;
+
+Procedure PredictOutputFileNames(Parameters : string);
+Begin
+
 End;
 
 Procedure Generate(Parameters : string);
+Var
+   FileInfo      : string;
 Begin
+
+     ProcessParameters(Parameters);
+
+     BOMFilePath := StartParameters[1] + 'BOM\' + StartParameters[2] + '.txt';
+     ODBTopCompFilePath := StartParameters[1] + 'ODB\odb\steps\pcb1\layers\comp_+_top\components';
+     ODBBotCompFilePath := StartParameters[1] + 'ODB\odb\steps\pcb1\layers\comp_+_bot\components';
+
      AddBomToODB;
-     //GetBomData;
-     //ProcessODBTop;
-     //ProcessODBBottom;
+
+     FileInfo := StartParameters[1] + 'ODB\' + StartParameters[2] + '.tgz';         // Path to .tgz File
+     deletefile(FileInfo);                                              // Delete tgz file
+     FileInfo := StartParameters[1] + 'ODB\' + StartParameters[2] + '.zip';         // Path to .zip File
+     deletefile(FileInfo);                                              // Delete zip file
+     FileInfo := StartParameters[1] + '\ODB' + StartParameters[2] + '.rep';         // Path to Report File
+     deletefile(FileInfo);                                              // Delete Report file
+     FileInfo := '"C:\Program Files\7-Zip\7z.exe" a' + ' "' + StartParameters[1] + 'ODB\' + StartParameters[2] + '.tar"' + ' "' + StartParameters[1] + 'ODB\odb"';
+     ErrorCode := RunApplication(FileInfo);
+     sleep(3000); // wait some time
+     FileInfo := '"C:\Program Files\7-Zip\7z.exe" a' + ' "' + StartParameters[1] + 'ODB\' + StartParameters[2] + '.tgz"' + ' "' + StartParameters[1] + 'ODB\' + StartParameters[2] + '.tar"';
+     ErrorCode := RunApplication(FileInfo);
 End;
 
 End.
