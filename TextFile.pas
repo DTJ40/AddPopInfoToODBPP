@@ -82,6 +82,8 @@ Begin
           ReadLN(BomFile, InputString);
           if (InputString <> NULL) then
           begin
+               InputString := AnsiMidStr(InputString,2,length(InputString)-2);            // EE Rothhaas 2020.02.06
+               InputString := InputString + ',';                                          // EE Rothhaas 2020.02.06
                BomString := BomString + InputString;           // Create String with all designators
                i := i + 1;
           end
@@ -162,7 +164,8 @@ Begin
                               TestText := TextSegment[11];
                               i := length(TestText);
                               TextSegment[11] := AnsiRightStr(TextSegment[11], i-2);
-                              PartDesignator := TextSegment[7];
+                              //PartDesignator := TextSegment[7];
+                              PartDesignator := TextSegment[7] + ',';                           // EE Rothhaas 2020.02.06
                               PartNumber := TextSegment[8];
                               if (AnsiContainsText(BomString, PartDesignator)) then
                               begin
